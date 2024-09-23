@@ -3,7 +3,7 @@ use crate::{
     FrameOrResult, FrameResult,
 };
 use interpreter::{
-    tables::InstructionTables, CallInputs, CallOutcome, CreateInputs, CreateOutcome,
+    table::InstructionTables, CallInputs, CallOutcome, CreateInputs, CreateOutcome,
     EOFCreateInputs, InterpreterAction, InterpreterResult, SharedMemory,
 };
 use specification::hardfork::Spec;

@@ -86,7 +86,7 @@ pub fn exchange<H: Host + ?Sized>(interpreter: &mut Interpreter, _host: &mut H) 
 mod test {
 
     use super::*;
-    use crate::{tables::make_instruction_table, DummyHost, Gas, InstructionResult};
+    use crate::{table::make_instruction_table, DummyHost, Gas, InstructionResult};
     use bytecode::opcode::{DUPN, EXCHANGE, SWAPN};
     use bytecode::Bytecode;
     use specification::hardfork::PragueSpec;

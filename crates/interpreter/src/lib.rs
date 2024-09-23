@@ -24,8 +24,7 @@ mod instruction_result;
 pub mod instructions;
 pub mod interpreter;
 pub mod interpreter_action;
-pub mod opcode;
-pub mod tables;
+pub mod table;
 
 // Reexport primary types.
 pub use function_stack::{FunctionReturnFrame, FunctionStack};
@@ -43,5 +42,5 @@ pub use interpreter_action::{
     EOFCreateKind, InterpreterAction,
 };
 pub use primitives::{MAX_CODE_SIZE, MAX_INITCODE_SIZE};
-pub use tables::Instruction;
+pub use table::Instruction;
 pub use wiring::default::CreateScheme;

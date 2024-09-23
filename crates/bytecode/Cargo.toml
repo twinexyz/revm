@@ -42,9 +42,9 @@ phf = { version = "0.11", default-features = false, optional = true, features = 
 ] }
 
 [features]
-default = ["std"]
+default = ["std", "parse"]
 std = ["serde?/std", "primitives/std"]
 hashbrown = ["primitives/hashbrown"]
 serde = ["dep:serde", "primitives/serde", "bitvec/serde"]
 serde-json = ["serde"]
-parse = []
+parse = ["phf", "paste"]

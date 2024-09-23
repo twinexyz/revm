@@ -203,7 +203,7 @@ pub fn unknown<H: Host + ?Sized>(interpreter: &mut Interpreter, _host: &mut H) {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{tables::make_instruction_table, DummyHost, FunctionReturnFrame, Gas, Interpreter};
+    use crate::{table::make_instruction_table, DummyHost, FunctionReturnFrame, Gas, Interpreter};
     use bytecode::opcode::{CALLF, JUMPF, NOP, RETF, RJUMP, RJUMPI, RJUMPV, STOP};
     use bytecode::{
         eof::{Eof, TypesSection},

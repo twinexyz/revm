@@ -11,31 +11,7 @@ pub struct LegacyRawBytecode(pub Bytes);
 
 impl LegacyRawBytecode {
     pub fn analysis(&self) -> JumpTable {
-        let mut jumps: BitVec<u8> = bitvec![u8, Lsb0; 0; self.0.len()];
-
-        let range = self.0.as_ptr_range();
-        let start = range.start;
-        let mut iterator = start;
-        let end = range.end;
-        while iterator < end {
-            let opcode = unsafe { *iterator };
-            if opcode::JUMPDEST == opcode {
-                // SAFETY: jumps are max length of the code
-                unsafe { jumps.set_unchecked(iterator.offset_from(start) as usize, true) }
-                iterator = unsafe { iterator.offset(1) };
-            } else {
-                let push_offset = opcode.wrapping_sub(opcode::PUSH1);
-                if push_offset < 32 {
-                    // SAFETY: iterator access range is checked in the while loop
-                    iterator = unsafe { iterator.offset((push_offset + 2) as isize) };
-                } else {
-                    // SAFETY: iterator access range is checked in the while loop
-                    iterator = unsafe { iterator.offset(1) };
-                }
-            }
-        }
-
-        JumpTable(Arc::new(jumps))
+        analyze_legacy(&self.0)
     }
 
     pub fn into_analyzed(self) -> LegacyAnalyzedBytecode {
@@ -66,4 +42,33 @@ impl Deref for LegacyRawBytecode {
     fn deref(&self) -> &Self::Target {
         &self.0
     }
+}
+
+/// Analyze the bytecode to find the jumpdests
+pub fn analyze_legacy(bytetecode: &[u8]) -> JumpTable {
+    let mut jumps: BitVec<u8> = bitvec![u8, Lsb0; 0; bytetecode.len()];
+
+    let range = bytetecode.as_ptr_range();
+    let start = range.start;
+    let mut iterator = start;
+    let end = range.end;
+    while iterator < end {
+        let opcode = unsafe { *iterator };
+        if opcode::JUMPDEST == opcode {
+            // SAFETY: jumps are max length of the code
+            unsafe { jumps.set_unchecked(iterator.offset_from(start) as usize, true) }
+            iterator = unsafe { iterator.offset(1) };
+        } else {
+            let push_offset = opcode.wrapping_sub(opcode::PUSH1);
+            if push_offset < 32 {
+                // SAFETY: iterator access range is checked in the while loop
+                iterator = unsafe { iterator.offset((push_offset + 2) as isize) };
+            } else {
+                // SAFETY: iterator access range is checked in the while loop
+                iterator = unsafe { iterator.offset(1) };
+            }
+        }
+    }
+
+    JumpTable(Arc::new(jumps))
 }

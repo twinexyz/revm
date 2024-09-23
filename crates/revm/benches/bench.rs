@@ -2,7 +2,7 @@ use criterion::{
     criterion_group, criterion_main, measurement::WallTime, BenchmarkGroup, Criterion,
 };
 use database::BenchmarkDB;
-use interpreter::{tables::make_instruction_table, SharedMemory, EMPTY_SHARED_MEMORY};
+use interpreter::{table::make_instruction_table, SharedMemory, EMPTY_SHARED_MEMORY};
 use revm::{
     bytecode::Bytecode,
     interpreter::{Contract, DummyHost, Interpreter},

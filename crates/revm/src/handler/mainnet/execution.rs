@@ -4,7 +4,7 @@ use crate::{
 };
 use core::mem;
 use interpreter::{
-    return_ok, return_revert, tables::InstructionTables, CallInputs, CallOutcome, CreateInputs,
+    return_ok, return_revert, table::InstructionTables, CallInputs, CallOutcome, CreateInputs,
     CreateOutcome, EOFCreateInputs, Gas, InstructionResult, InterpreterAction, InterpreterResult,
     SharedMemory, EMPTY_SHARED_MEMORY,
 };

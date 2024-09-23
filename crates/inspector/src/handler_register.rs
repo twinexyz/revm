@@ -3,7 +3,7 @@ use core::cell::RefCell;
 use revm::{
     bytecode::opcode,
     handler::register::EvmHandler,
-    interpreter::{tables::DynInstruction, InstructionResult, Interpreter},
+    interpreter::{table::DynInstruction, InstructionResult, Interpreter},
     wiring::result::EVMResultGeneric,
     Context, EvmWiring, FrameOrResult, FrameResult, JournalEntry,
 };

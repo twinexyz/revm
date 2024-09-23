@@ -2972,8 +2972,6 @@ version = "10.0.1"
 dependencies = [
  "bincode",
  "derive-where",
- "paste",
- "phf",
  "revm-bytecode",
  "revm-database-interface",
  "revm-primitives",

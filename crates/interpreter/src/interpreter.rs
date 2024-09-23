@@ -468,7 +468,7 @@ pub fn resize_memory(memory: &mut SharedMemory, gas: &mut Gas, new_size: usize) 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{tables::InstructionTable, DummyHost};
+    use crate::{table::InstructionTable, DummyHost};
     use specification::hardfork::CancunSpec;
     use wiring::DefaultEthereumWiring;
 
@@ -478,14 +478,13 @@ mod tests {
 
         let mut host = crate::DummyHost::<DefaultEthereumWiring>::default();
         let table: &InstructionTable<DummyHost<DefaultEthereumWiring>> =
-            &crate::tables::make_instruction_table::<DummyHost<DefaultEthereumWiring>, CancunSpec>(
-            );
+            &crate::table::make_instruction_table::<DummyHost<DefaultEthereumWiring>, CancunSpec>();
         let _ = interp.run(EMPTY_SHARED_MEMORY, table, &mut host);
 
         let host: &mut dyn Host<EvmWiringT = DefaultEthereumWiring> =
             &mut host as &mut dyn Host<EvmWiringT = DefaultEthereumWiring>;
         let table: &InstructionTable<dyn Host<EvmWiringT = DefaultEthereumWiring>> =
-            &crate::tables::make_instruction_table::<
+            &crate::table::make_instruction_table::<
                 dyn Host<EvmWiringT = DefaultEthereumWiring>,
                 CancunSpec,
             >();

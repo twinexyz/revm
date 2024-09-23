@@ -90,7 +90,7 @@ mod test {
     use wiring::DefaultEthereumWiring;
 
     use super::*;
-    use crate::{tables::make_instruction_table, DummyHost, Gas, Interpreter};
+    use crate::{table::make_instruction_table, DummyHost, Gas, Interpreter};
     use bytecode::opcode::{DATACOPY, DATALOAD, DATALOADN, DATASIZE};
 
     fn dummy_eof(code_bytes: Bytes) -> Bytecode {
