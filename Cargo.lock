@@ -2909,7 +2909,10 @@ name = "revm-bytecode"
 version = "1.0.0"
 dependencies = [
  "bitvec",
+ "paste",
+ "phf",
  "revm-primitives",
+ "revm-specification",
  "serde",
 ]
 

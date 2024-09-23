@@ -3,7 +3,8 @@
 
 use crate::{inspectors::GasInspector, Inspector};
 use revm::{
-    interpreter::{CallInputs, CallOutcome, CreateInputs, CreateOutcome, Interpreter, OpCode},
+    interpreter::{CallInputs, CallOutcome, CreateInputs, CreateOutcome, Interpreter},
+    bytecode::opcode::OpCode,
     primitives::{Address, U256},
     EvmContext, EvmWiring,
 };

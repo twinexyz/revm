@@ -9,11 +9,19 @@ pub mod eip7702;
 pub mod eof;
 pub mod errors;
 pub mod legacy;
+pub mod opcode;
+pub mod utils;
 
 pub use bitvec;
-pub use eof::{Eof, EOF_MAGIC, EOF_MAGIC_BYTES, EOF_MAGIC_HASH};
+pub use eof::{
+    verification::{
+        validate_eof, validate_eof_code, validate_eof_codes, validate_eof_inner, validate_raw_eof,
+        validate_raw_eof_inner, CodeType, EofValidationError,
+    },
+    Eof, EOF_MAGIC, EOF_MAGIC_BYTES, EOF_MAGIC_HASH,
+};
 pub use errors::BytecodeDecodeError;
-pub use legacy::{JumpTable, LegacyAnalyzedBytecode};
+pub use legacy::{JumpTable, LegacyAnalyzedBytecode, LegacyRawBytecode};
 
 use core::fmt::Debug;
 use eip7702::{Eip7702Bytecode, EIP7702_MAGIC_BYTES};
@@ -25,7 +33,7 @@ use std::sync::Arc;
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Bytecode {
     /// No analysis has been performed.
-    LegacyRaw(Bytes),
+    LegacyRaw(LegacyRawBytecode),
     /// The bytecode has been analyzed for valid jump destinations.
     LegacyAnalyzed(LegacyAnalyzedBytecode),
     /// Ethereum Object Format
@@ -90,7 +98,7 @@ impl Bytecode {
     /// Creates a new legacy [`Bytecode`].
     #[inline]
     pub fn new_legacy(raw: Bytes) -> Self {
-        Self::LegacyRaw(raw)
+        Self::LegacyRaw(raw.into())
     }
 
     /// Creates a new raw [`Bytecode`].
@@ -124,8 +132,22 @@ impl Bytecode {
                 let eip7702 = Eip7702Bytecode::new_raw(bytecode)?;
                 Ok(Self::Eip7702(eip7702))
             }
-            _ => Ok(Self::LegacyRaw(bytecode)),
+            _ => Ok(Self::LegacyRaw(bytecode.into())),
         }
+    }
+
+    /// Perform bytecode analysis.
+    ///
+    /// The analysis finds and caches valid jump destinations for later execution as an optimization step.
+    ///
+    /// If the bytecode is already analyzed, it is returned as-is.
+    #[inline]
+    pub fn into_analyzed(self) -> Bytecode {
+        let Bytecode::LegacyRaw(bytecode) = self else {
+            return self;
+        };
+
+        Bytecode::LegacyAnalyzed(bytecode.into_analyzed())
     }
 
     /// Create new checked bytecode.
@@ -189,7 +211,7 @@ impl Bytecode {
     #[inline]
     pub fn original_bytes(&self) -> Bytes {
         match self {
-            Self::LegacyRaw(bytes) => bytes.clone(),
+            Self::LegacyRaw(bytes) => bytes.0.clone(),
             Self::LegacyAnalyzed(analyzed) => analyzed.original_bytes(),
             Self::Eof(eof) => eof.raw().clone(),
             Self::Eip7702(eip7702) => eip7702.raw().clone(),

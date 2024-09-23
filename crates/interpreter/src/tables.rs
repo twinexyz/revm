@@ -1,7 +1,6 @@
 #![allow(clippy::wrong_self_convention)]
 
-use super::instruction;
-use crate::{instructions::control, Host, Interpreter};
+use crate::{instructions::control, opcode::instruction, Host, Interpreter};
 use specification::hardfork::Spec;
 use std::boxed::Box;
 
