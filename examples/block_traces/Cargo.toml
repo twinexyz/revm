@@ -23,6 +23,7 @@ all = "warn"
 
 [dependencies]
 revm.workspace = true
+primitives = { workspace = true, features = ["std", "test-temp"] }
 database = { workspace = true, features = ["std", "alloydb"] }
 inspector = { workspace = true, features = ["std", "serde-json"] }
 

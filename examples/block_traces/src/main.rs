@@ -7,7 +7,7 @@ use database::{AlloyDB, CacheDB, StateBuilder};
 use indicatif::ProgressBar;
 use inspector::{inspector_handle_register, inspectors::TracerEip3155};
 use revm::{
-    primitives::{TxKind, B256, U256},
+    primitives::{TxKind, B256, TEST_NUM, U256},
     specification::eip2930::AccessListItem,
     wiring::EthereumWiring,
     Evm,

@@ -37,6 +37,7 @@ hex = { version = "0.4", default-features = false }
 default = ["std"]
 std = ["alloy-primitives/std", "hex/std"]
 hashbrown = []
+test-temp = []
 serde = ["alloy-primitives/serde", "hex/serde", "hashbrown/serde"]
 arbitrary = ["std", "alloy-primitives/arbitrary"]
 asm-keccak = ["alloy-primitives/asm-keccak"]

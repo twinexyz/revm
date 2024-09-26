@@ -24,3 +24,6 @@ cfg_if::cfg_if! {
 /// The Keccak-256 hash of the empty string `""`.
 pub const KECCAK_EMPTY: B256 =
     b256!("c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470");
+
+#[cfg(feature = "test-temp")]
+pub const TEST_NUM: u32 = 10;
