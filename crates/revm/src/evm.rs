@@ -408,19 +408,116 @@ impl<EvmWiringT: EvmWiring> Evm<'_, EvmWiringT> {
 #[cfg(test)]
 mod tests {
 
+    use crate::{
+        handler::{ExecutionHandler, PostExecutionHandler, PreExecutionHandler, ValidationHandler},
+        EvmHandler,
+    };
+
     use super::*;
     use bytecode::{
         opcode::{PUSH1, SSTORE},
         Bytecode,
     };
+    use core::{fmt::Debug, hash::Hash};
     use database::BenchmarkDB;
+    use database_interface::Database;
+    use interpreter::table::InstructionTables;
     use primitives::{address, TxKind, U256};
     use specification::{
         eip7702::{Authorization, RecoveredAuthorization, Signature},
         hardfork::SpecId,
+        spec_to_generic,
     };
     use transaction::TransactionType;
-    use wiring::EthereumWiring;
+    use wiring::{
+        default::{self, block::BlockEnv, Env, TxEnv},
+        result::HaltReason,
+        EthereumWiring, EvmWiring as InnerEvmWiring,
+    };
+
+    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
+    struct CEthereumWiring<'a, DB: Database, EXT> {
+        phantom: core::marker::PhantomData<&'a (DB, EXT)>,
+    }
+
+    impl<'a, DB: Database, EXT: Debug> InnerEvmWiring for CEthereumWiring<'a, DB, EXT> {
+        type Database = DB;
+        type ExternalContext = EXT;
+        type ChainContext = ();
+        type Block = default::block::BlockEnv;
+        type Transaction = &'a default::TxEnv;
+        type Hardfork = SpecId;
+        type HaltReason = HaltReason;
+    }
+
+    impl<'a, DB: Database, EXT: Debug> EvmWiring for CEthereumWiring<'a, DB, EXT> {
+        fn handler<'evm>(hardfork: Self::Hardfork) -> EvmHandler<'evm, Self>
+        where
+            DB: Database,
+        {
+            spec_to_generic!(
+                hardfork,
+                EvmHandler {
+                    spec_id: hardfork,
+                    instruction_table: InstructionTables::new_plain::<SPEC>(),
+                    registers: Vec::new(),
+                    validation: ValidationHandler::new::<SPEC>(),
+                    pre_execution: PreExecutionHandler::new::<SPEC>(),
+                    post_execution: PostExecutionHandler::mainnet::<SPEC>(),
+                    execution: ExecutionHandler::new::<SPEC>(),
+                }
+            )
+        }
+    }
+
+    //pub type DefaultEthereumWiring = EthereumWiring<EmptyDB, ()>;
+
+    #[test]
+    fn sanity_tx_ref() {
+        let delegate = address!("0000000000000000000000000000000000000000");
+        let caller = address!("0000000000000000000000000000000000000001");
+        let auth = address!("0000000000000000000000000000000000000100");
+
+        let mut tx = TxEnv::default();
+        tx.tx_type = TransactionType::Eip7702;
+        tx.gas_limit = 100_000;
+        tx.authorization_list = vec![RecoveredAuthorization::new_unchecked(
+            Authorization {
+                chain_id: U256::from(1),
+                address: delegate,
+                nonce: 0,
+            }
+            .into_signed(Signature::test_signature()),
+            Some(auth),
+        )]
+        .into();
+        tx.caller = caller;
+        tx.transact_to = TxKind::Call(auth);
+
+        let mut tx2 = TxEnv::default();
+        tx2.tx_type = TransactionType::Legacy;
+        // nonce was bumped from 0 to 1
+        tx2.nonce = 1;
+
+        let mut evm = EvmBuilder::new_with(
+            BenchmarkDB::default(),
+            (),
+            Env::boxed(CfgEnv::default(), BlockEnv::default(), &tx),
+            CEthereumWiring::handler(SpecId::LATEST),
+        )
+        .build();
+
+        let _ = evm.transact().unwrap();
+
+        let mut evm = evm
+            .modify()
+            .modify_tx_env(|t| {
+                *t = &tx2;
+            })
+            .build();
+
+        let _ = evm.transact().unwrap();
+    }
 
     #[test]
     fn sanity_eip7702_tx() {

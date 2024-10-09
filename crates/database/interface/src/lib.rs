@@ -17,11 +17,16 @@ pub mod empty_db;
 pub use async_db::{DatabaseAsync, WrapDatabaseAsync};
 pub use empty_db::{EmptyDB, EmptyDBTyped};
 
+pub trait BytecodeTrait {
+    fn code(&self) -> &[u8];
+}
+
 /// EVM database interface.
 #[auto_impl(&mut, Box)]
 pub trait Database {
     /// The database error type.
     type Error;
+    //type Bytecode: BytecodeTrait;
 
     /// Get basic account information.
     fn basic(&mut self, address: Address) -> Result<Option<AccountInfo>, Self::Error>;
