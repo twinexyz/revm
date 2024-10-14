@@ -5,6 +5,7 @@ pub mod generic;
 pub mod post_execution;
 pub mod pre_execution;
 pub mod validation;
+pub mod validation_new;
 
 // Exports
 
@@ -20,5 +21,7 @@ pub use pre_execution::{
     DeductCallerHandle, LoadAccountsHandle, LoadPrecompilesHandle, PreExecutionHandler,
 };
 pub use validation::{
-    ValidateEnvHandle, ValidateInitialTxGasHandle, ValidateTxEnvAgainstState, ValidationHandler,
+    ValidateEnvHandle, ValidateInitialTxGasHandle, ValidateTxEnvAgainstState,
+    ValidationHandler,
 };
+pub use validation_new::*;

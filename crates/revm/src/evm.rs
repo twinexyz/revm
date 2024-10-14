@@ -14,9 +14,6 @@ use wiring::{
     Transaction,
 };
 
-/// EVM call stack limit.
-pub const CALL_STACK_LIMIT: u64 = 1024;
-
 /// EVM instance containing both internal EVM context and external context
 /// and the handler that dictates the logic of EVM (or hardfork specification).
 pub struct Evm<'a, EvmWiringT: EvmWiring> {
@@ -409,7 +406,10 @@ impl<EvmWiringT: EvmWiring> Evm<'_, EvmWiringT> {
 mod tests {
 
     use crate::{
-        handler::{ExecutionHandler, PostExecutionHandler, PreExecutionHandler, ValidationHandler},
+        handler::{
+            EthValidation, ExecutionHandler, PostExecutionHandler, PreExecutionHandler,
+            ValidationHandler,
+        },
         EvmHandler,
     };
 
@@ -431,7 +431,7 @@ mod tests {
     use transaction::TransactionType;
     use wiring::{
         default::{self, block::BlockEnv, Env, TxEnv},
-        result::HaltReason,
+        result::{EVMErrorWiring, HaltReason},
         EthereumWiring, EvmWiring as InnerEvmWiring,
     };
 
@@ -463,6 +463,7 @@ mod tests {
                     registers: Vec::new(),
                     validation: ValidationHandler::new::<SPEC>(),
                     pre_execution: PreExecutionHandler::new::<SPEC>(),
+                    new_v: EthValidation::<Context<Self>, EVMErrorWiring<Self>, SPEC>::new_boxed(),
                     post_execution: PostExecutionHandler::mainnet::<SPEC>(),
                     execution: ExecutionHandler::new::<SPEC>(),
                 }

@@ -169,6 +169,12 @@ pub enum EVMError<DBError, TransactionError> {
     Precompile(String),
 }
 
+impl<DB, TXERROR: From<InvalidTransaction>> From<InvalidTransaction> for EVMError<DB, TXERROR> {
+    fn from(value: InvalidTransaction) -> Self {
+        Self::Transaction(value.into())
+    }
+}
+
 impl<DBError, TransactionValidationErrorT> EVMError<DBError, TransactionValidationErrorT> {
     /// Maps a `DBError` to a new error type using the provided closure, leaving other variants unchanged.
     pub fn map_db_err<F, E>(self, op: F) -> EVMError<E, TransactionValidationErrorT>
@@ -215,12 +221,6 @@ where
             Self::Database(e) => write!(f, "database error: {e}"),
             Self::Precompile(e) | Self::Custom(e) => f.write_str(e),
         }
-    }
-}
-
-impl<DBError> From<InvalidTransaction> for EVMError<DBError, InvalidTransaction> {
-    fn from(value: InvalidTransaction) -> Self {
-        Self::Transaction(value)
     }
 }
 

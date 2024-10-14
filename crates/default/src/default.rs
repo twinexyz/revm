@@ -5,7 +5,7 @@ use transaction::{Eip4844Tx, TransactionType};
 pub use tx::TxEnv;
 
 use crate::block::blob::calc_blob_gasprice;
-use crate::{Block, Cfg, EvmWiring, Transaction};
+use crate::{Block, EvmWiring, Transaction};
 use core::fmt::Debug;
 use core::hash::Hash;
 use primitives::{TxKind, U256};
@@ -198,12 +198,6 @@ impl CfgEnv {
 
     pub const fn is_nonce_check_disabled(&self) -> bool {
         self.disable_nonce_check
-    }
-}
-
-impl Cfg for CfgEnv {
-    fn chain_id(&self) -> u64 {
-        self.chain_id
     }
 }
 

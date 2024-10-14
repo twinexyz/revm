@@ -1,5 +1,5 @@
 use super::inner_evm_context::InnerEvmContext;
-use crate::{ContextPrecompiles, EvmWiring, FrameOrResult, CALL_STACK_LIMIT};
+use crate::{data::ContextPrecompiles, FrameOrResult};
 use bytecode::{Bytecode, Eof, EOF_MAGIC_BYTES};
 use core::ops::{Deref, DerefMut};
 use database_interface::Database;
@@ -11,12 +11,13 @@ use interpreter::{
 };
 use precompile::PrecompileErrors;
 use primitives::{keccak256, Address, Bytes, B256};
+use specification::constants::CALL_STACK_LIMIT;
 use specification::hardfork::SpecId::{self, *};
 use std::{boxed::Box, sync::Arc};
 use wiring::{
     default::{CreateScheme, EnvWiring},
     result::{EVMError, EVMResultGeneric},
-    Transaction,
+    EvmWiring, Transaction,
 };
 
 /// EVM context that contains the inner EVM context and precompiles.
@@ -551,7 +552,7 @@ pub(crate) mod test_utils {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{Frame, JournalEntry};
+    use crate::{frame::Frame, journaled_state::JournalEntry};
     use bytecode::Bytecode;
     use database::CacheDB;
     use database_interface::EmptyDB;

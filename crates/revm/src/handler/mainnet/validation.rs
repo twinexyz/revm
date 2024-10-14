@@ -1,6 +1,6 @@
 use core::cmp::{self, Ordering};
 
-use crate::{Context, EvmWiring};
+use crate::{handler::validation_new::TransactionGetter, Context, EvmWiring};
 use interpreter::gas;
 use primitives::{B256, U256};
 use specification::{
@@ -108,6 +108,14 @@ pub fn validate_eip4844_tx(
             max: eip4844::MAX_BLOB_NUMBER_PER_BLOCK as usize,
         });
     }
+    Ok(())
+}
+
+pub fn old_validate_tx_env<EvmWiringT: EvmWiring, SPEC: Spec>(
+    tx: &EvmWiringT::Transaction,
+    block: &EvmWiringT::Block,
+    cfg: &CfgEnv,
+) -> Result<(), InvalidTransaction> {
     Ok(())
 }
 
@@ -353,24 +361,36 @@ where
 }
 
 /// Validate initial transaction gas.
+/// Validate initial transaction gas.
 pub fn validate_initial_tx_gas<EvmWiringT: EvmWiring, SPEC: Spec>(
     env: &EnvWiring<EvmWiringT>,
 ) -> EVMResultGeneric<u64, EvmWiringT>
 where
     <EvmWiringT::Transaction as Transaction>::TransactionError: From<InvalidTransaction>,
 {
-    let tx_type = env.tx.tx_type().into();
+    new_validate_initial_tx_gas::<&EnvWiring<EvmWiringT>, SPEC, InvalidTransaction>(env)
+        .map_err(|e: InvalidTransaction| EVMError::Transaction(e.into()))
+}
+
+/// Validate initial transaction gas.
+pub fn new_validate_initial_tx_gas<TxGetter: TransactionGetter, SPEC: Spec, Error>(
+    env: TxGetter,
+) -> Result<u64, Error>
+where
+    Error: From<InvalidTransaction>,
+{
+    let tx_type = env.tx().tx_type().into();
 
     let authorization_list_num = if tx_type == TransactionType::Eip7702 {
-        env.tx.eip7702().authorization_list_len() as u64
+        env.tx().eip7702().authorization_list_len() as u64
     } else {
         0
     };
 
-    let common_fields = env.tx.common_fields();
-    let is_create = env.tx.kind().is_create();
+    let common_fields = env.tx().common_fields();
+    let is_create = env.tx().kind().is_create();
     let input = common_fields.input();
-    let access_list = env.tx.access_list();
+    let access_list = env.tx().access_list();
 
     let initial_gas_spend = gas::validate_initial_tx_gas(
         SPEC::SPEC_ID,
@@ -382,9 +402,7 @@ where
 
     // Additional check to see if limit is big enough to cover initial gas.
     if initial_gas_spend > common_fields.gas_limit() {
-        return Err(EVMError::Transaction(
-            InvalidTransaction::CallGasCostMoreThanGasLimit.into(),
-        ));
+        return Err(InvalidTransaction::CallGasCostMoreThanGasLimit.into());
     }
     Ok(initial_gas_spend)
 }
