@@ -1,6 +1,6 @@
 use crate::{evm_wiring::HaltReasonTrait, EvmWiring};
 use core::fmt::{self, Debug};
-use database_interface::Database;
+use database_interface::{DBErrorMarker, Database};
 use primitives::{Address, Bytes, Log, U256};
 use specification::eip7702::InvalidAuthorization;
 use state::EvmState;
@@ -167,6 +167,12 @@ pub enum EVMError<DBError, TransactionError> {
     Custom(String),
     /// Precompile error.
     Precompile(String),
+}
+
+impl<DBError: DBErrorMarker, TX> From<DBError> for EVMError<DBError, TX> {
+    fn from(value: DBError) -> Self {
+        Self::Database(value)
+    }
 }
 
 impl<DB, TXERROR: From<InvalidTransaction>> From<InvalidTransaction> for EVMError<DB, TXERROR> {

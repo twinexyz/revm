@@ -11,7 +11,7 @@ use primitives::{Address, B256};
 ///
 /// Number of account and storage slots is used to calculate initial tx gas cost.
 #[auto_impl(&, Box, Arc, Rc)]
-pub trait AccessListTrait {
+pub trait AccessListTrait: Clone {
     /// Iterate over access list.
     fn iter(&self) -> impl Iterator<Item = (Address, impl Iterator<Item = B256>)>;
 

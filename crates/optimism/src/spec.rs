@@ -1,9 +1,7 @@
 use revm::{
+    context::{BlockGetter, CfgGetter, DatabaseGetter, EvmError, TransactionGetter},
     database_interface::Database,
-    handler::{
-        BlockGetter, CfgGetter, DatabaseGetter, EthValidation, EvmError, TransactionGetter,
-        ValidationWire,
-    },
+    handler::{EthValidation, ValidationWire},
     precompile::PrecompileSpecId,
     specification::hardfork::{Spec, SpecId},
     wiring::result::{EVMError, InvalidTransaction},

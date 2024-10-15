@@ -20,7 +20,7 @@ members = [
     "crates/context",
 
     # variants
-    "crates/optimism",
+    # "crates/optimism",
 
     # examples
     "examples/block_traces",

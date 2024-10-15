@@ -9,6 +9,7 @@ pub mod block;
 pub mod cfg;
 pub mod default;
 pub mod evm_wiring;
+pub mod journaled_state;
 pub mod precompile;
 pub mod result;
 

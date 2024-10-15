@@ -180,7 +180,7 @@ impl<EvmWiringT: EvmWiring> Host for Context<EvmWiringT> {
         self.evm
             .inner
             .journaled_state
-            .selfdestruct(address, target, &mut self.evm.inner.db)
+            .selfdestruct(address, target)
             .map_err(|e| self.evm.error = Err(e))
             .ok()
     }

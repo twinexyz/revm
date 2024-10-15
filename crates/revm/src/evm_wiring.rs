@@ -1,19 +1,20 @@
 use crate::{
     handler::{
-        EthValidation, ExecutionHandler, PostExecutionHandler, PreExecutionHandler,
-        ValidationHandler, ValidationWire,
+        mainnet::EthValidation, ExecutionHandler, PostExecutionHandler, PreExecutionHandler,
+        ValidationWire,
     },
     EvmHandler,
 };
-use context::Context;
+use context::{Context, JournaledState};
 use database_interface::Database;
 use interpreter::table::InstructionTables;
 use specification::spec_to_generic;
 use std::fmt::Debug;
 use std::vec::Vec;
 use wiring::{
+    journaled_state::JournaledState as JournaledStateTrait,
     result::{EVMError, EVMErrorWiring},
-    EthereumWiring, EvmWiring as PrimitiveEvmWiring,
+    EthereumWiring, EvmWiring as PrimitiveEvmWiring, Transaction,
 };
 
 pub trait EvmWiring: PrimitiveEvmWiring {
@@ -25,7 +26,6 @@ impl<DB: Database, EXT: Debug> EvmWiring for EthereumWiring<DB, EXT> {
     fn handler<'evm>(hardfork: Self::Hardfork) -> EvmHandler<'evm, Self>
     where
         DB: Database,
-        //EXT: 'ev,
     {
         spec_to_generic!(
             hardfork,
@@ -33,8 +33,14 @@ impl<DB: Database, EXT: Debug> EvmWiring for EthereumWiring<DB, EXT> {
                 spec_id: hardfork,
                 instruction_table: InstructionTables::new_plain::<SPEC>(),
                 registers: Vec::new(),
-                validation: ValidationHandler::new::<SPEC>(),
-                new_v: EthValidation::<Context<Self>, EVMErrorWiring<Self>, SPEC>::new_boxed(),
+                validation: EthValidation::<
+                    Context<Self>,
+                    EVMError<
+                        <<JournaledState<DB> as JournaledStateTrait>::Database as Database>::Error,
+                        <<Self as PrimitiveEvmWiring>::Transaction as Transaction>::TransactionError,
+                    >,
+                    SPEC,
+                >::new_boxed(),
                 pre_execution: PreExecutionHandler::new::<SPEC>(),
                 post_execution: PostExecutionHandler::mainnet::<SPEC>(),
                 execution: ExecutionHandler::new::<SPEC>(),

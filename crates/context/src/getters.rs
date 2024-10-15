@@ -1,4 +1,4 @@
-use crate::Context;
+use crate::{Context, JournaledState as JournaledStateImpl};
 use auto_impl::auto_impl;
 use database_interface::{Database, EmptyDB};
 use specification::hardfork::{LatestSpec, Spec};
@@ -7,10 +7,12 @@ use transaction::Transaction;
 use wiring::{
     default::{CfgEnv, Env, EnvWiring},
     evm_wiring::HardforkTrait,
+    journaled_state::JournaledState,
     result::{EVMError, EVMResultGeneric, InvalidTransaction},
     Block, Cfg, EthereumWiring, EvmWiring,
 };
 
+#[auto_impl(&, &mut, Box, Arc)]
 pub trait CfgGetter {
     type Cfg: Cfg;
 
@@ -25,6 +27,34 @@ impl<EvmWiringT: EvmWiring> CfgGetter for Context<EvmWiringT> {
     }
 }
 
+impl<BLOCK: Block, TX: Transaction> CfgGetter for Env<BLOCK, TX> {
+    type Cfg = CfgEnv;
+
+    fn cfg(&self) -> &Self::Cfg {
+        &self.cfg
+    }
+}
+
+/// Helper that extracts database error from [`JournalStateGetter`].
+pub type JournalStateGetterDBError<CTX> =
+    <<<CTX as JournalStateGetter>::Journal as JournaledState>::Database as Database>::Error;
+
+#[auto_impl(&mut, Box)]
+pub trait JournalStateGetter {
+    type Journal: JournaledState;
+
+    fn journal(&mut self) -> &mut Self::Journal;
+}
+
+impl<EvmWiringT: EvmWiring> JournalStateGetter for Context<EvmWiringT> {
+    type Journal = JournaledStateImpl<EvmWiringT::Database>;
+
+    fn journal(&mut self) -> &mut Self::Journal {
+        &mut self.evm.journaled_state
+    }
+}
+
+#[auto_impl(&mut, Box)]
 pub trait DatabaseGetter {
     type Database: Database;
 
@@ -35,11 +65,11 @@ impl<EvmWiringT: EvmWiring> DatabaseGetter for Context<EvmWiringT> {
     type Database = EvmWiringT::Database;
 
     fn db(&mut self) -> &mut Self::Database {
-        &mut self.evm.db
+        &mut self.evm.journaled_state.database
     }
 }
 
-#[auto_impl(&, Box, Arc)]
+#[auto_impl(&, &mut, Box, Arc)]
 pub trait TransactionGetter {
     type Transaction: Transaction;
 
@@ -62,7 +92,7 @@ impl<EvmWiringT: EvmWiring> TransactionGetter for Context<EvmWiringT> {
     }
 }
 
-#[auto_impl(&, Box, Arc)]
+#[auto_impl(&, &mut, Box, Arc)]
 pub trait BlockGetter {
     type Block: Block;
 
@@ -86,3 +116,5 @@ impl<EvmWiringT: EvmWiring> BlockGetter for Context<EvmWiringT> {
 }
 
 pub type EvmError<DB, TX> = EVMError<DB, TX>;
+
+// ENV

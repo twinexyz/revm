@@ -4,6 +4,7 @@ use crate::{
     Context, ContextWithEvmWiring, EvmContext, EvmWiring, Frame, FrameOrResult, FrameResult,
     InnerEvmContext,
 };
+use context::JournaledState;
 use core::fmt::{self, Debug};
 use database_interface::{Database, DatabaseCommit};
 use interpreter::{Host, InterpreterAction, NewFrameAction, SharedMemory};
@@ -43,7 +44,7 @@ impl<EvmWiringT: EvmWiring<Database: DatabaseCommit>> Evm<'_, EvmWiringT> {
         &mut self,
     ) -> EVMResultGeneric<ExecutionResult<EvmWiringT::HaltReason>, EvmWiringT> {
         let ResultAndState { result, state } = self.transact()?;
-        self.context.evm.db.commit(state);
+        self.context.evm.journaled_state.database.commit(state);
         Ok(result)
     }
 }
@@ -80,14 +81,19 @@ impl<'a, EvmWiringT: EvmWiring> Evm<'a, EvmWiringT> {
                 Context {
                     evm:
                         EvmContext {
-                            inner: InnerEvmContext { db, env, .. },
+                            inner:
+                                InnerEvmContext {
+                                    journaled_state: JournaledState { database, .. },
+                                    env,
+                                    ..
+                                },
                             ..
                         },
                     external,
                 },
             handler,
         } = self;
-        EvmBuilder::<'a>::new_with(db, external, env, handler)
+        EvmBuilder::<'a>::new_with(database, external, env, handler)
     }
 
     /// Runs main call loop.
@@ -223,7 +229,7 @@ impl<EvmWiringT: EvmWiring> Evm<'_, EvmWiringT> {
         let initial_gas_spend = self
             .handler
             .validation()
-            .initial_tx_gas(&self.context.evm.env)
+            .validate_initial_tx_gas(&self.context)
             .inspect_err(|_| {
                 self.clear();
             })?;
@@ -236,14 +242,14 @@ impl<EvmWiringT: EvmWiring> Evm<'_, EvmWiringT> {
     /// Pre verify transaction inner.
     #[inline]
     fn preverify_transaction_inner(&mut self) -> EVMResultGeneric<u64, EvmWiringT> {
-        self.handler.validation().env(&self.context.evm.env)?;
+        self.handler.validation().validate_env(&self.context)?;
         let initial_gas_spend = self
             .handler
             .validation()
-            .initial_tx_gas(&self.context.evm.env)?;
+            .validate_initial_tx_gas(&self.context)?;
         self.handler
             .validation()
-            .tx_against_state(&mut self.context)?;
+            .validate_tx_against_state(&mut self.context)?;
         Ok(initial_gas_spend)
     }
 
@@ -289,13 +295,13 @@ impl<EvmWiringT: EvmWiring> Evm<'_, EvmWiringT> {
     /// Returns the reference of database
     #[inline]
     pub fn db(&self) -> &EvmWiringT::Database {
-        &self.context.evm.db
+        &self.context.evm.journaled_state.database
     }
 
     /// Returns the mutable reference of database
     #[inline]
     pub fn db_mut(&mut self) -> &mut EvmWiringT::Database {
-        &mut self.context.evm.db
+        &mut self.context.evm.journaled_state.database
     }
 
     /// Returns the reference of block
@@ -332,7 +338,7 @@ impl<EvmWiringT: EvmWiring> Evm<'_, EvmWiringT> {
         EvmWiringT::Hardfork,
     ) {
         (
-            self.context.evm.inner.db,
+            self.context.evm.inner.journaled_state.database,
             self.context.evm.inner.env,
             self.handler.spec_id,
         )
@@ -407,8 +413,7 @@ mod tests {
 
     use crate::{
         handler::{
-            EthValidation, ExecutionHandler, PostExecutionHandler, PreExecutionHandler,
-            ValidationHandler,
+            mainnet::EthValidation, ExecutionHandler, PostExecutionHandler, PreExecutionHandler,
         },
         EvmHandler,
     };
@@ -461,9 +466,9 @@ mod tests {
                     spec_id: hardfork,
                     instruction_table: InstructionTables::new_plain::<SPEC>(),
                     registers: Vec::new(),
-                    validation: ValidationHandler::new::<SPEC>(),
                     pre_execution: PreExecutionHandler::new::<SPEC>(),
-                    new_v: EthValidation::<Context<Self>, EVMErrorWiring<Self>, SPEC>::new_boxed(),
+                    validation:
+                        EthValidation::<Context<Self>, EVMErrorWiring<Self>, SPEC>::new_boxed(),
                     post_execution: PostExecutionHandler::mainnet::<SPEC>(),
                     execution: ExecutionHandler::new::<SPEC>(),
                 }

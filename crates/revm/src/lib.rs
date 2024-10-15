@@ -8,6 +8,7 @@ extern crate alloc as std;
 
 // reexport dependencies
 pub use bytecode;
+pub use context;
 pub use database_interface;
 pub use interpreter;
 pub use precompile;

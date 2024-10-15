@@ -5,6 +5,7 @@ pub mod register;
 
 // Exports.
 pub use handle_types::*;
+use mainnet::EthValidation;
 
 // Includes.
 
@@ -31,12 +32,8 @@ pub struct Handler<'a, EvmWiringT: EvmWiring, H: Host + 'a> {
     pub instruction_table: InstructionTables<'a, H>,
     /// Registers that will be called on initialization.
     pub registers: Vec<HandleRegisters<'a, EvmWiringT>>,
-    /// New validity
-    //pub new_v: Validation<Context, EvmWiringT>,
-    /// Validity handles.
-    pub validation: ValidationHandler<'a, EvmWiringT>,
     /// New Validation
-    pub new_v: Box<
+    pub validation: Box<
         dyn ValidationWire<Context = Context<EvmWiringT>, Error = EVMErrorWiring<EvmWiringT>> + 'a,
     >,
     /// Pre execution handle.
@@ -64,10 +61,9 @@ where
                 spec_id,
                 instruction_table: InstructionTables::new_plain::<SPEC>(),
                 registers: Vec::new(),
-                validation: ValidationHandler::new::<SPEC>(),
                 pre_execution: PreExecutionHandler::new::<SPEC>(),
                 post_execution: PostExecutionHandler::mainnet::<SPEC>(),
-                new_v: EthValidation::<Context<EvmWiringT>, EVMErrorWiring<EvmWiringT>, SPEC>::new_boxed(
+                validation: EthValidation::<Context<EvmWiringT>, EVMErrorWiring<EvmWiringT>, SPEC>::new_boxed(
                 ),
                 execution: ExecutionHandler::new::<SPEC>(),
             }
@@ -122,8 +118,11 @@ impl<'a, EvmWiringT: EvmWiring> EvmHandler<'a, EvmWiringT> {
     }
 
     /// Returns reference to validation handler.
-    pub fn validation(&self) -> &ValidationHandler<'a, EvmWiringT> {
-        &self.validation
+    pub fn validation(
+        &self,
+    ) -> &dyn ValidationWire<Context = Context<EvmWiringT>, Error = EVMErrorWiring<EvmWiringT>>
+    {
+        self.validation.as_ref()
     }
 
     /// Append handle register.
