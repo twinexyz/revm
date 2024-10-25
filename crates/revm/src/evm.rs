@@ -351,6 +351,9 @@ impl<EXT, DB: Database> Evm<'_, EXT, DB> {
                 CallInputs::new_boxed(&ctx.evm.env.tx, gas_limit).unwrap(),
             )?,
             TxKind::Create => {
+
+                println!("[💚💛] Create Tx type");
+                println!("[💚💛] Spec Id: {:?}", spec_id);
                 // if first byte of data is magic 0xEF00, then it is EOFCreate.
                 if spec_id.is_enabled_in(SpecId::PRAGUE_EOF)
                     && ctx.env().tx.data.starts_with(&EOF_MAGIC_BYTES)
